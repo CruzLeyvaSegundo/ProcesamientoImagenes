@@ -1,15 +1,59 @@
 #include<stdio.h>
-#include<string.h>
 #include<conio.h>
-#include <iostream>
-#include <math.h>
+#include<math.h>
+#include<iostream>
+#include<regex>
+#include<string>
 #define PI 3.14159265
 using namespace std;
+
 FILE *fd,*fs;
-int origenX,origenY,numFil,numCol,lenR=0;
-int matrizImg[800][800],salida[800][800];
-char nomSalida[50],nomEntrada[50];
-int lenNumero(int Num) //Calcula o número de dígitos de um número
+int numFil,numCol,grayScale;
+int matrizImg[900][900],matrizAux[900][900],matrizOriginal[900][900];
+string nomSalida,nomEntrada;
+struct PuntoLimite
+{ 
+   	int x; 
+   	int y;
+   	void create(int a,int b)
+   	{
+   		x=a;
+   		y=b;
+	}
+   	void rotateP(float t) 
+   	{
+   		int cx,cy,coseno,seno,xAux=x;
+   		coseno=cos(-t*PI/180.0);
+   		seno=sin(-t*PI/180.0);
+		cx=numFil/2;
+		cy=numCol/2;
+		x=coseno*(x-cx) - seno*(y-cy) +cx;
+		y=seno*(xAux-cx) + coseno*(y-cy) +cy;
+	} 
+   	void traslateP(float d,int op)
+	{
+		if(op==1) // 1 ES HORIZONTAL 
+		   	y=y+d;	 	   		
+		else if(op==2)  // 2 ES VERTICAL
+		   	x=x-d;					
+	} 
+   	void reflexionP(int op)
+	{ 
+		if(op==1)  // 1 ES HORIZONTAL
+		   	y=numCol-y+1;
+		else if(op==2) // 2 ES VERTICAL
+		   	x=numFil-x+1;	   			   		
+	}
+	bool fueraLimite()
+	{
+		if(x<1||x>numFil||y<1||y>numCol)
+			return true;
+		else 
+			return false;
+	}
+} lim[4]; 
+
+int lenNumero(int Num) //Calcula el numero de digitos de un numero
 { 
     int i=0;
     if(Num==0)
@@ -21,245 +65,285 @@ int lenNumero(int Num) //Calcula o número de dígitos de um número
     } 
     return i; 
 } 
-int parseInt(char *cadena)
-{   
-   int potencias[3]={1,10,100};  
-   int valor=0,i; 
-   int lon=strlen(cadena);
-   for(i=lon-1; i>=0; i--) 
-   {
-      valor+=(cadena[i]-'0')*potencias[lon-i-1]; 
-   }
-   return valor; 
+
+void copiarMatriz(int A[900][900],int B[900][900])
+{
+	for(int i=1;i<=numFil;i++)
+		for(int j=1;j<=numCol;j++)
+		{
+			A[i][j]=B[i][j];
+		}
 }
+
 void reflexion(int op)
 {
-	int x,y,x2,y2,cx,cy;
+	lim[0].reflexionP(op);
+	lim[1].reflexionP(op);
+	lim[2].reflexionP(op);
+	lim[3].reflexionP(op);
+	int x,y,x2,y2;
 	for(x=1;x<=numFil;x++)
-	for(y=1;y<=numCol;y++)
-	   {
-	   	if(op==1)  // 1 ES HORIZONTAL
-	   	{
-	   		x2=x;
-	   		y2=numCol-y+1;
+		for(y=1;y<=numCol;y++)
+		{
+		   	if(op==1)  // 1 ES HORIZONTAL
+		   	{
+		   		x2=x;
+		   		y2=numCol-y+1;
+			}
+		   	else if(op==2) // 2 ES VERTICAL
+		   	{
+		   		x2=numFil-x+1;
+		   		y2=y;	   			   		
+			}
+		    matrizAux[x2][y2]=matrizImg[x][y];
 		}
-	   	else if(op==2) // 2 ES VERTICAL
-	   	{
-	   		x2=numFil-x+1;
-	   		y2=y;	   			   		
-		}
-	    salida[x2][y2]=matrizImg[x][y];
-	   }
+	copiarMatriz(matrizImg,matrizAux);
 }
-void mover(int d,int op)
+void traslate(float d,int op)
 {
-	int x,y,x2,y2,cx,cy;
-	for(x=1;x<=numFil;x++)
-	for(y=1;y<=numCol;y++)
-	   {
-	   	if(op==1)  // 1 ES HORIZONTAL
-	   	{
-	   		x2=x+d;
-	   		y2=y; 		
+	lim[0].traslateP(d,op);
+	lim[1].traslateP(d,op);
+	lim[2].traslateP(d,op);
+	lim[3].traslateP(d,op);
+	int x,y,x2,y2;
+	for(x2=1;x2<=numFil;x2++)
+		for(y2=1;y2<=numCol;y2++)
+		{
+		   	if(op==1) // 1 ES HORIZONTAL 
+		   	{
+		   		x=x2;
+		   		y=y2-d;	 	   		
+			}
+		   	else if(op==2)  // 2 ES VERTICAL
+		   	{
+		   		x=x2+d;
+		   		y=y2; 		
+			}				
+		   	if((x>0) && (y>0) &&(x<=numFil)&&(y<=numCol))
+		      	matrizAux[x2][y2]=matrizImg[x][y];
+		   	else
+		      	matrizAux[x2][y2]=0;//aqui le pones un valor que quieras
 		}
-	   	else if(op==2) // 2 ES VERTICAL
-	   	{
-	   		x2=x;
-	   		y2=y+d;	 	   		
-		}
-	   	if((x2>0) && (y2>0) &&(x2<=numFil)&&(y2<=numCol))
-	      salida[x2][y2]=matrizImg[x][y];
-	   else
-	      salida[x2][y2]=0;//aqui le pones un valor que quieras
-	   }
+	copiarMatriz(matrizImg,matrizAux);   
 }
-void rotate(int t)
+void rotate(float t)
 {
+	lim[0].rotateP(t);
+	lim[1].rotateP(t);
+	lim[2].rotateP(t);
+	lim[3].rotateP(t);
 	int x,y,x2,y2,cx,cy;
 	cx=numFil/2;
 	cy=numCol/2;
 	for(x2=1;x2<=numFil;x2++)
-	for(y2=1;y2<=numCol;y2++)
-	   {
-	   x=cos(t*PI/180.0)*(x2-cx) + sin(t*PI/180.0)*(y2-cy)+cx;
-	   y=cos(t*PI/180.0)*(y2-cy) - sin(t*PI/180.0)*(x2-cx)+cy ;
-	   if((x>0) && (y>0) &&(x<=numFil)&&(y<=numCol))
-	      salida[x2][y2]=matrizImg[x][y];
-	   else
-	      salida[x2][y2]=0;//aqui le pones un valor que quieras
-	   }
+		for(y2=1;y2<=numCol;y2++)
+		   {
+			   x=cos(-t*PI/180.0)*(x2-cx) + sin(-t*PI/180.0)*(y2-cy)+cx;
+			   y=cos(-t*PI/180.0)*(y2-cy) - sin(-t*PI/180.0)*(x2-cx)+cy ;
+		   	if((x>0) && (y>0) &&(x<=numFil)&&(y<=numCol))
+		      	matrizAux[x2][y2]=matrizImg[x][y];
+		   	else
+		      	matrizAux[x2][y2]=0;//aqui le pones un valor que quieras
+		   }
+	copiarMatriz(matrizImg,matrizAux);  
 }
 void procImagem()
 {
- char formato[4],registro[5000],c[3];;
- int e=4;
- //O arquivo de teste é aberto para leitura
- if((fd=fopen(nomEntrada,"rt"))==NULL)
- {
-  cout<<"no se puede abrir "<<nomEntrada<<endl;
-  return;
- }        
- //Ele cria ou sobrescreve o arquivo onde o resultado é salvo
- if((fs=fopen(nomSalida,"w"))==NULL)
- {
-  cout<<"no se puede abrir "<<nomSalida<<endl;
-  return;
- }   
- //O cabeçalho é copiado para o arquivo de saída
- fgets(formato,4,fd);
- fputs(formato,fs);
- cout<<"Tipo: "<<formato;
- fflush(stdin);
- if(formato[0]!='P'||(formato[1]!='2'&&formato[1]!='5'))
- {
-               cout<<"\nERROR: la imagen de entrada no esta en formato PGM P2\n";
-               system("pause");
-               return ;
- }
-//LECTURA DE COMENTARIOS
- int j=0,band=0;
- fgets(registro,90,fd);
- fflush(stdin);   
- while(registro[0]=='#')
- {
-     e++;
-     cout<<"Comentario :"<<registro;                                      
-     fputs(registro,fs);  
-     fflush(stdin);   
-     fgets(registro,90,fd);
- }
- for(int i=0;i<strlen(registro);i++)
-     {
-     	
-             if(registro[i]==' '||registro[i]=='\n')
-             {    
-                  c[j]='\0';            
-                  int tam=parseInt(c);  
-                  if(band==0)
-                  {
-                     numFil=tam;
-                     band=1;
-                  }
-                  else if(band==1)
-                     numCol=tam;
-                  strcpy(c,"   ");                 
-                  j=0;
-             }  
-             else
-             {   
-                 c[j]=registro[i];    
-                 j++;     
-             }
-     } 
- cout<<"numFilas y numColumnas: "<<numFil<<" "<<numCol;
- fprintf(fs,"%d %d\n", numFil,numCol);
- fflush(stdin);
- fgets(registro,90,fd);
- fputs(registro,fs);
- cout<<"\ngrayscale: "<<registro;   
- fflush(stdin);
-/* cout<<"\nIngrese coordenadas de pixel P(x,y)\n";
- cout<<"x: ";
- cin>>origenX;
- cout<<"y: ";
- cin>>origenY; */
- fflush(stdin);
- //Processamento de imagem
- int p=1,q=1,numPixeles=0;
- bool pR=true;
- while(!feof(fd))
- {
-     int j=0,i=0,num;
-     strcpy(c,"");
-     c[3]='\0';     
-     fgets(registro,4000,fd);
-     while(registro[i]==' ')
-            i++;    
-     for(;i<strlen(registro);i++)
-     {
-     	
-             if((registro[i]==' ')&&p<=numFil)
-             {    
-                  c[j]='\0';
-                  while(registro[i+1]==' ')
-                      i++;                
-                  num=parseInt(c);  
-				  matrizImg[p][q]=num;
-				  numPixeles++;
-				  if(q==numCol)
-				  {
-				  	p++;
-				  	q=0;
-				  }
-                  fflush(stdin);
-                  strcpy(c,"   ");                 
-                  j=0;
-                  q++;
-                  if(pR)
-                  	lenR++;
-             }  
-             else
-             {   
-                 c[j]=registro[i];    
-                 j++;     
-             }
-     } 
-     pR=false;
-     fflush(stdin);
- }
- fflush(stdin);
- cout<<"lenRegistro: "<<lenR<<"  numPixeles: "<<numPixeles<<endl;
-/* cout<<"\nEl pixel pivote escogido P("<<origenX<<","<<origenY<<") "<<endl;
- cout<<"esta ubicado en la linea "<<(((origenX-1)*numCol+origenY)/lenR) + e<<" y columna "<<((origenX-1)*numCol+origenY)%lenR<<" del archivo PGM \n";
- cout<<matrizImg[origenX][origenY-4]<<"  "<<matrizImg[origenX][origenY-3]<<"  "<<matrizImg[origenX][origenY-2]<<"\n";
- cout<<matrizImg[origenX][origenY-1]<<"  "<<matrizImg[origenX][origenY]<<"  "<<matrizImg[origenX][origenY+1]<<"\n";
- cout<<matrizImg[origenX][origenY+2]<<"  "<<matrizImg[origenX][origenY+3]<<"  "<<matrizImg[origenX][origenY+4]<<"\n";*/
- int t;
- /*cout<<"Angulo a rotar:";
- cin>>t;
- rotate(t);*/
- /*cout<<"Distancia a mover:";
- cin>>t;
- mover(t,2);*/
- cout<<"Reflexion en X (1) o Y (2):";
- cin>>t;
- reflexion(t);
- int k=0,lenNum;
- for(int i=1;i<=numFil;i++)
- {
-    for(int j=1;j<=numCol;j++)
+	char registro[150];
+	string reg;
+    cout<<"--Programa tarefa 4--\n";
+	cout<<"Ingrese nombre del archivo de entrada:";
+    cin>>nomEntrada;
+	nomEntrada+=".pgm";  //Nome de arquivo entrada PGM
+    cout<<"Ele programa esta usando o arquivo "<<nomEntrada<<"\n";	
+	 
+	//O arquivo de teste é aberto para leitura
+	if((fd=fopen(nomEntrada.c_str(),"r"))==NULL)
+	{
+		cout<<"no se puede abrir "<<nomEntrada<<endl;
+		return;
+	}    
+     
+	cout<<"Ingrese nombre del archivo salida:";
+    cin>>nomSalida;
+    nomSalida+=".pgm";  //Nome de arquivo saida PGM*/
+    
+    if(nomEntrada==nomSalida)
     {
-     	lenNum=lenNumero(salida[i][j]);
-     	int x=salida[i][j];
-     	if(lenNum==1)
-     		fprintf(fs,"  %d ",x);
-     	else if(lenNum==2)
-     		fprintf(fs," %d ",x);
-     	else
-     		fprintf(fs,"%d ",x);
-        k++;
-        /*if(k%lenR==0)
-            fprintf(fs,"%s\n"," ");*/
-        fflush(stdin);
+    	cout<<"El nombre del archivo de salda debe ser diferente al del archivo de entrada\n";
+    	return;
+	}
+
+	//Ele cria ou sobrescreve o arquivo onde o resultado é salvo
+	if((fs=fopen(nomSalida.c_str(),"w+"))==NULL)
+	{
+	  	cout<<"no se puede abrir "<<nomSalida<<endl;
+	  	return;
+	}   
+ 
+ 	//O cabeçalho é copiado para o arquivo de saída
+ 	fgets(registro,100,fd);
+ 	fputs(registro,fs);
+ 	fflush(stdin);
+ 	cout<<"tipo:"<<registro;
+ 	if(registro[0]!='P'||(registro[1]!='2'&&registro[1]!='5'))
+ 	{
+        cout<<"\nERROR: la imagen de entrada no esta en formato PGM P2\n";
+        system("pause");
+        return ;
+ 	}
+ 
+	//LECTURA DE COMENTARIOS
+ 	fgets(registro,100,fd);
+ 	fflush(stdin);   
+ 	while(registro[0]=='#')
+ 	{
+     	cout<<"Comentario :"<<registro;                                      
+     	fputs(registro,fs);  
+     	fflush(stdin);   
+     	fgets(registro,100,fd);
+ 	}
+ 
+ 	//LECTURA DE numFil Y numCol
+ 	reg=(string)registro;
+ 	numFil=stoi(reg.substr(0,reg.find(" ")));
+ 	numCol=stoi(reg.substr(reg.find(" "),reg.size()-reg.find(" ")));
+ 	cout<<"numFilas y numColumnas: "<<numFil<<" "<<numCol;
+ 	fputs(registro,fs);
+ 	fflush(stdin);
+ 
+ 	//LECTURA DE grayScale
+ 	fgets(registro,100,fd);
+ 	fputs(registro,fs);
+ 	reg=(string)registro;
+ 	grayScale=stoi(reg);
+ 	cout<<"\ngrayscale: "<<grayScale<<endl;   
+ 	fflush(stdin);
+ 	
+ 	//Lectura de matriz entrada
+ 	int pixel;   			
+ 	for(int i=1;i<=numFil;i++)
+ 	{
+    	for(int j=1;j<=numCol&&!feof(fd);j++)
+    	{
+ 				fscanf(fd,"%d",&pixel);
+ 				matrizImg[i][j]=pixel;
+ 				fflush(stdin);
+		}
+	}		
+	copiarMatriz(matrizOriginal,matrizImg);		
+
+	// Lectura de linea de comandos
+		//  ((\\+|-)?[[:digit:]]+)(\\.[[:digit:]]+)?          NUMERO REAL
+		//  ((\\+|-)?[[:digit:]]+)                            NUMERO ENTERO
+		//  RO\\(((\\+|-)?[[:digit:]]+)(\\.(([[:digit:]]+)?))?\\)    RO()
+		//  (M(H|V)\\(((\\+|-)?[[:digit:]]+)\\))                     MH(),MV()
+		//  (R(H|V)))												RH,RV	
+	
+		//((R((O\\(((\\+|-)?[[:digit:]]+)(\\.(([[:digit:]]+)?))?\\))|H|V))|(M(H|V)\\(((\\+|-)?[[:digit:]]+)\\)))     RO(),MH(),MV(),RH.RV
+	bool band=false;
+    lim[0].create(94,98);
+    lim[1].create(94,246);
+    lim[2].create(274,98);
+    lim[3].create(274,246);
+	do{
+		regex sintaxi("(((R((O\\(((\\+|-)?[[:digit:]]+)(\\.(([[:digit:]]+)?))?\\))|H|V))|(M(H|V)\\(((\\+|-)?[[:digit:]]+)\\)));)*((R((O\\(((\\+|-)?[[:digit:]]+)(\\.(([[:digit:]]+)?))?\\))|H|V))|(M(H|V)\\(((\\+|-)?[[:digit:]]+)\\)))");
+		string linea;
+		band=false;
+		//limpiamos el buffer antes de la siguiente lectura
+		//cin.ignore(256,'\n');
+		cout<<"Ingrese una linea de comandos!"<<endl;
+		getline(cin, linea);
+		if(regex_match(linea,sintaxi))
+		{	
+			cout<<"bien"<<endl;
+			linea+=";";
+			do
+			{
+				string comando,codigo,arg;
+				int pos=linea.find(";");
+				comando=linea.substr(0,pos);
+				linea=linea.substr(pos+1,linea.size()-pos);
+				codigo=comando.substr(0,2);
+				cout<<"subcadena: "<<comando<<endl;
+				if(codigo=="RH")
+					reflexion(1);
+				else if(codigo=="RV")
+					reflexion(2);
+				else
+				{
+					float numArg;
+					pos=comando.find(")");
+					arg=comando.substr(3,pos-3);
+					numArg=stof(arg);				
+					if(codigo=="MH")
+						traslate(numArg,1);
+					else if(codigo=="MV")
+						traslate(numArg,2);		
+					else if(codigo=="RO")
+					{					
+						rotate(numArg);				
+					}
+					cout<<" con argumento : "<<numArg<<endl;	
+				}
+			}
+			while(!linea.empty());		
+			if(lim[0].fueraLimite()&&lim[1].fueraLimite()&&lim[2].fueraLimite()&&lim[3].fueraLimite())	
+			{
+				fflush(stdin);
+				cout<<"La tortuga esta totalmente afuera de la imagen!!\n";
+				cout<<"Quiere ingresar otra linea de comandos? (s/n):";
+				cin>>linea;
+				if(linea=="s"||linea=="S")
+				{
+					copiarMatriz(matrizImg,matrizOriginal);
+					lim[0].create(94,98);
+    				lim[1].create(94,246);
+    				lim[2].create(274,98);
+    				lim[3].create(274,246);
+					band=true;
+				}
+				else if(linea=="n"||linea=="N") 
+					band=false;
+			}
+
+		}
+		else
+		{
+			cout<<"Error de sintaxis en la linea de comandos ingresada!!!"<<endl;
+			cout<<"Vuelva a intetarlo\n\n";
+			fflush(stdin);
+			band=true;
+		}
+	}
+	while(band);		
+
+ 	//Escritura de la matriz de salida
+ 	for(int i=1;i<=numFil;i++)
+ 	{
+    	for(int j=1;j<=numCol;j++)
+    	{
+    		int x=matrizImg[i][j];
+     		int lenNum=lenNumero(x);
+     		if(lenNum==1)
+     			fprintf(fs,"  %d ",x);
+     		else if(lenNum==2)
+     			fprintf(fs," %d ",x);
+     		else
+     			fprintf(fs,"%d ",x);
+       		fflush(stdin);
         
-    }
-    fprintf(fs,"%s\n"," ");
- }  
- cout<<"\nFin de procesamiento de la imagen "<<nomEntrada<<endl;
- fclose(fs);
- fclose(fd);
+    	}
+    	fprintf(fs,"%s\n"," ");
+ 	}  
+ 	cout<<"\nFin de procesamiento de la imagen "<<nomEntrada<<endl;
+ 	fclose(fs);
+ 	fclose(fd);
 
 }
 
 int main()
 {
-	strcpy(nomEntrada,"tortuga.pgm");  //Nome de arquivo entrada PGM
-    cout<<"--Programa para calcular as frequências de ocorrência de cada valor na imagem--\n";
-    cout<<"Ele programa esta usando o arquivo "<<nomEntrada<<"\n";
-    /*cout<<"Ingrese nombre del archivo salida:";
-    cin>>nomSalida;
-    strcat(nomSalida,".pgm");*/
-    strcpy(nomSalida,"salida.pgm");  //Nome de arquivo entrada PGM
     procImagem();
     getch ();
     return 0;
