@@ -1,0 +1,21 @@
+				INSTRUÇÕES
+1.Compilar o código em C++ (Eu uso o Dev-C ++)
+2.Quando você executar o programa a imagem padrão utilizado é tartaruga.pgm
+3.Ingresa el nombre archivo en donde se guardara el resultado
+4.Ingresa una linea de comandos
+	La sintaxis de los comando esta defininada por la siguiente expresion regular: E := (C';')*C
+	Donde C es igual a:
+	C := (R((O'('(('+'|'-')?[:digit:]+)('.'([:digit:])+)?')')|H|V))|(M(H|V)'('('+'|'-')?[:digit:]+')')
+	
+	El argumento del comando va entre parentesis
+	Cada comando debe estar separado con un ';'
+	Si hay un error en la sintaxis de la linea de comandos ingresada el programa te pide que vuelvas a intentarlo
+
+	Ejemplos:
+		*   RO(+90.25)                         // Si solo se ingresa un comando no hay necesidad del ';'
+		*   RO(-88.6);MH(+50);RH                 
+		*   RH(100);RV;MH(-50);RO(85)                
+		*   RH
+5.Si la tortuga esta totalmente afuera de la imagen despues de ejecutar los comandos, se pide la confirmacion del usuario para
+  continuar a guardar el resultado en el archivo de salida o intentar nuevamente con otra linea de comandos a la imagen que seran aplicadas a 
+  la imagen original.
