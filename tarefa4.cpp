@@ -41,9 +41,9 @@ struct PuntoLimite
    	void reflexionP(int op)
 	{ 
 		if(op==1)  // 1 ES HORIZONTAL
-		   	y=2*mayorY-y;
+		   	y=numCol-+1;
 		else if(op==2) // 2 ES VERTICAL
-		   	x=2*mayorX-x;   			   		
+		  	x=numFil-x+1;  			   		
 	}
 	bool fueraLimite()
 	{
@@ -108,25 +108,21 @@ void copiarMatriz(int A[900][900],int B[900][900])
 
 void reflexion(int op)
 {
-	medidas();
 	int x,y,x2,y2;
-	for(x2=1;x2<=numFil;x2++)
-		for(y2=1;y2<=numCol;y2++)
+	for(x=1;x<=numFil;x++)
+		for(y=1;y<=numCol;y++)
 		{
 		   	if(op==1)  // 1 ES HORIZONTAL
 		   	{
-		   		x=x2;
-		   		y=2*mayorY-y2;
+		   		x2=x;
+		   		y2=numCol-y+1;
 			}
 		   	else if(op==2) // 2 ES VERTICAL
 		   	{
-		   		x=2*mayorX-x2;
-		   		y=y2;	   			   		
+		   		x2=numFil-x+1;
+		   		y2=y;	   			   		
 			}
-		   	if((x>=1) && (y>=1) &&(x<=numFil)&&(y<=numCol))
-		      	matrizAux[x2][y2]=matrizImg[x][y];
-		   	else
-		      	matrizAux[x2][y2]=255;//aqui le pones un valor que quieras
+		    matrizAux[x2][y2]=matrizImg[x][y];
 		}
 	lim[0].reflexionP(op);
 	lim[1].reflexionP(op);
