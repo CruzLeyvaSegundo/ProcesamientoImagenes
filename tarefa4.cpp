@@ -41,9 +41,9 @@ struct PuntoLimite
    	void reflexionP(int op)
 	{ 
 		if(op==1)  // 1 ES HORIZONTAL
-		   	y=numCol-+1;
+		   	y=mayorY-y+menorY;
 		else if(op==2) // 2 ES VERTICAL
-		  	x=numFil-x+1;  			   		
+		   	x=mayorX-x+menorX;		   		
 	}
 	bool fueraLimite()
 	{
@@ -108,21 +108,25 @@ void copiarMatriz(int A[900][900],int B[900][900])
 
 void reflexion(int op)
 {
+	medidas();
 	int x,y,x2,y2;
-	for(x=1;x<=numFil;x++)
-		for(y=1;y<=numCol;y++)
+	for(x2=1;x2<=numFil;x2++)
+		for(y2=1;y2<=numCol;y2++)
 		{
 		   	if(op==1)  // 1 ES HORIZONTAL
 		   	{
-		   		x2=x;
-		   		y2=numCol-y+1;
+		   		x=x2;
+		   		y=mayorY-y2+menorY;
 			}
 		   	else if(op==2) // 2 ES VERTICAL
 		   	{
-		   		x2=numFil-x+1;
-		   		y2=y;	   			   		
+		   		x=mayorX-x2+menorX;
+		   		y=y2;	   			   		
 			}
-		    matrizAux[x2][y2]=matrizImg[x][y];
+		    if((x>=1) && (y>=1) &&(x<=numFil)&&(y<=numCol))
+ 				matrizAux[x2][y2]=matrizImg[x][y];
+ 		   	else
+ 		      	matrizAux[x2][y2]=255;
 		}
 	lim[0].reflexionP(op);
 	lim[1].reflexionP(op);
@@ -286,6 +290,7 @@ void procImagem()
 		//cin.ignore(256,'\n');
 		cout<<"Digite uma linha de comando!"<<endl;
 		getline(cin, linea);
+		linea=linea.substr(0,linea.find(" "));
 		if(regex_match(linea,sintaxi))
 		{	
 			cout<<"good :)"<<endl;
